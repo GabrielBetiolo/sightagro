@@ -8,12 +8,12 @@ const route = useRoute()
 const sidebarOpen = ref(true)
 
 const navItems = [
-  { path: '/dashboard', icon: 'ti-layout-dashboard', label: 'Dashboard' },
-  { path: '/fazendas', icon: 'ti-map', label: 'Fazendas' },
-  { path: '/sensores', icon: 'ti-activity', label: 'Sensores' },
-  { path: '/irrigacao', icon: 'ti-droplet', label: 'Irrigação' },
-  { path: '/relatorios', icon: 'ti-chart-bar', label: 'Relatórios' },
-  { path: '/alertas', icon: 'ti-bell', label: 'Alertas' }
+  { path: '/app/dashboard', icon: 'ti-layout-dashboard', label: 'Dashboard' },
+  { path: '/app/fazendas', icon: 'ti-map', label: 'Fazendas' },
+  { path: '/app/sensores', icon: 'ti-activity', label: 'Sensores' },
+  { path: '/app/irrigacao', icon: 'ti-droplet', label: 'Irrigação' },
+  { path: '/app/relatorios', icon: 'ti-chart-bar', label: 'Relatórios' },
+  { path: '/app/alertas', icon: 'ti-bell', label: 'Alertas' }
 ]
 </script>
 

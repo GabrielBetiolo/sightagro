@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = data.user
     localStorage.setItem('agro_token', data.token)
     localStorage.setItem('agro_user', JSON.stringify(data.user))
-    router.push('/dashboard')
+    router.push('/app/dashboard')
   }
 
   async function register(name: string, email: string, password: string) {
@@ -32,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = data.user
     localStorage.setItem('agro_token', data.token)
     localStorage.setItem('agro_user', JSON.stringify(data.user))
-    router.push('/dashboard')
+    router.push('/app/dashboard')
   }
 
   function logout() {

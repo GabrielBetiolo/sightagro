@@ -5,6 +5,12 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/',
+      name: 'Landing',
+      component: () => import('../views/LandingView.vue'),
+      meta: { public: true }
+    },
+    {
       path: '/login',
       name: 'Login',
       component: () => import('../views/LoginView.vue'),
@@ -17,65 +23,31 @@ const router = createRouter({
       meta: { public: true }
     },
     {
-      path: '/',
+      path: '/app',
       component: () => import('../components/AppLayout.vue'),
       meta: { requiresAuth: true },
       children: [
-        {
-          path: '',
-          redirect: '/dashboard'
-        },
-        {
-          path: 'dashboard',
-          name: 'Dashboard',
-          component: () => import('../views/DashboardView.vue')
-        },
-        {
-          path: 'fazendas',
-          name: 'Fazendas',
-          component: () => import('../views/FazendasView.vue')
-        },
-        {
-          path: 'sensores',
-          name: 'Sensores',
-          component: () => import('../views/SensoresView.vue')
-        },
-        {
-          path: 'irrigacao',
-          name: 'Irrigacao',
-          component: () => import('../views/IrrigacaoView.vue')
-        },
-        {
-          path: 'relatorios',
-          name: 'Relatorios',
-          component: () => import('../views/RelatoriosView.vue')
-        },
-        {
-          path: 'alertas',
-          name: 'Alertas',
-          component: () => import('../views/AlertasView.vue')
-        },
-        {
-          path: 'perfil',
-          name: 'Perfil',
-          component: () => import('../views/PerfilView.vue')
-        }
+        { path: '', redirect: '/app/dashboard' },
+        { path: 'dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
+        { path: 'fazendas', name: 'Fazendas', component: () => import('../views/FazendasView.vue') },
+        { path: 'sensores', name: 'Sensores', component: () => import('../views/SensoresView.vue') },
+        { path: 'irrigacao', name: 'Irrigacao', component: () => import('../views/IrrigacaoView.vue') },
+        { path: 'relatorios', name: 'Relatorios', component: () => import('../views/RelatoriosView.vue') },
+        { path: 'alertas', name: 'Alertas', component: () => import('../views/AlertasView.vue') },
+        { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') }
       ]
     },
-    {
-      path: '/:pathMatch(.*)*',
-      redirect: '/dashboard'
-    }
+    { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (!to.meta.public && !auth.token) {
+  if (to.meta.requiresAuth && !auth.token) {
     return { name: 'Login' }
   }
-  if (to.meta.public && auth.token) {
-    return { name: 'Dashboard' }
+  if (to.meta.public && auth.token && to.name !== 'Landing') {
+    return { path: '/app/dashboard' }
   }
 })
 
