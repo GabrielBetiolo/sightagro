@@ -9,12 +9,15 @@ export interface User {
   email: string
   role: string
   avatar?: string
+  phone?: string
+  timezone?: string
+  language?: string
+  notifications?: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('agro_token'))
   const user = ref<User | null>(JSON.parse(localStorage.getItem('agro_user') || 'null'))
-
   const isAuthenticated = computed(() => !!token.value)
 
   async function login(email: string, password: string) {
@@ -49,10 +52,14 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await api.get('/auth/me')
       user.value = data
       localStorage.setItem('agro_user', JSON.stringify(data))
-    } catch {
-      logout()
-    }
+    } catch { logout() }
   }
 
-  return { token, user, isAuthenticated, login, register, logout, fetchMe }
+  async function updateProfile(data: Partial<User>) {
+    const updated = await api.put('/auth/me', data)
+    user.value = { ...user.value, ...updated }
+    localStorage.setItem('agro_user', JSON.stringify(user.value))
+  }
+
+  return { token, user, isAuthenticated, login, register, logout, fetchMe, updateProfile }
 })
