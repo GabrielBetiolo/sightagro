@@ -16,7 +16,8 @@ const navItems = [
   { path: '/app/sensores', icon: 'ti-activity', label: 'Sensores' },
   { path: '/app/irrigacao', icon: 'ti-droplet', label: 'Irrigação' },
   { path: '/app/relatorios', icon: 'ti-chart-bar', label: 'Relatórios' },
-  { path: '/app/alertas', icon: 'ti-bell', label: 'Alertas' }
+  { path: '/app/alertas', icon: 'ti-bell', label: 'Alertas' },
+  { path: '/app/planos', icon: 'ti-crown', label: 'Planos' }
 ]
 
 const isActive = (path: string) => route.path === path

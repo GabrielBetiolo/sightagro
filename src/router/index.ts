@@ -22,6 +22,7 @@ const router = createRouter({
         { path: 'irrigacao', name: 'Irrigacao', component: () => import('../views/IrrigacaoView.vue') },
         { path: 'relatorios', name: 'Relatorios', component: () => import('../views/RelatoriosView.vue') },
         { path: 'alertas', name: 'Alertas', component: () => import('../views/AlertasView.vue') },
+        { path: 'planos', name: 'Planos', component: () => import('../views/PlanosView.vue') },
         { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') },
       ]
     },
