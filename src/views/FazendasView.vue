@@ -1,62 +1,85 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { api } from '../composables/useApi'
+import { useClima } from '../composables/useClima'
 
+const { clima, fetchClima } = useClima()
+const fazendas = ref<any[]>([])
+const loading = ref(true)
 const showModal = ref(false)
 const showDetalhes = ref(false)
 const showEditar = ref(false)
 const fazendaSelecionada = ref<any>(null)
+const criando = ref(false)
+const salvando = ref(false)
+
 const newFazenda = ref({ nome: '', localizacao: '', area: '', cultura: '' })
-
-const fazendas = ref([
-  { id: 1, nome: 'Fazenda São João', localizacao: 'Mato Grosso, BR', area: '1.200 ha', cultura: 'Soja', saude: 92, sensores: 12, status: 'ativa', irrigacao: 'Ativa', energia: '81%', agua: '67%' },
-  { id: 2, nome: 'Fazenda Aurora', localizacao: 'Goiás, BR', area: '840 ha', cultura: 'Milho', saude: 78, sensores: 8, status: 'ativa', irrigacao: 'Inativa', energia: '65%', agua: '54%' },
-  { id: 3, nome: 'Fazenda Boa Esperança', localizacao: 'Paraná, BR', area: '560 ha', cultura: 'Trigo', saude: 65, sensores: 6, status: 'alerta', irrigacao: 'Ativa', energia: '42%', agua: '88%' },
-])
-
 const editForm = ref({ nome: '', localizacao: '', area: '', cultura: '' })
 
-function saudeColor(val: number) {
-  if (val >= 85) return '#4ade80'
-  if (val >= 65) return '#facc15'
-  return '#f87171'
+async function fetchFazendas() {
+  loading.value = true
+  try { fazendas.value = await api.get('/fazendas') }
+  finally { loading.value = false }
 }
 
-function abrirDetalhes(f: any) {
+async function criarFazenda() {
+  if (!newFazenda.value.nome) return
+  criando.value = true
+  try {
+    await api.post('/fazendas', {
+      nome: newFazenda.value.nome,
+      localizacao: newFazenda.value.localizacao,
+      area: Number(newFazenda.value.area) || 0,
+      cultura: newFazenda.value.cultura
+    })
+    showModal.value = false
+    newFazenda.value = { nome: '', localizacao: '', area: '', cultura: '' }
+    await fetchFazendas()
+  } finally { criando.value = false }
+}
+
+async function salvarEdicao() {
+  salvando.value = true
+  try {
+    await api.put(`/fazendas/${fazendaSelecionada.value.id}`, {
+      nome: editForm.value.nome,
+      localizacao: editForm.value.localizacao,
+      area: Number(editForm.value.area),
+      cultura: editForm.value.cultura
+    })
+    showEditar.value = false
+    await fetchFazendas()
+  } finally { salvando.value = false }
+}
+
+async function deletarFazenda(id: number) {
+  if (!confirm('Deletar esta fazenda? Todos os sensores e alertas serão removidos.')) return
+  await api.delete(`/fazendas/${id}`)
+  await fetchFazendas()
+}
+
+async function abrirDetalhes(f: any) {
   fazendaSelecionada.value = f
   showDetalhes.value = true
+  await fetchClima(f.id)
 }
 
 function abrirEditar(f: any) {
   fazendaSelecionada.value = f
-  editForm.value = { nome: f.nome, localizacao: f.localizacao, area: f.area, cultura: f.cultura }
+  editForm.value = { nome: f.nome, localizacao: f.localizacao, area: String(f.area), cultura: f.cultura }
   showEditar.value = true
 }
 
-function salvarEdicao() {
-  const idx = fazendas.value.findIndex(f => f.id === fazendaSelecionada.value.id)
-  if (idx !== -1) {
-    fazendas.value[idx] = { ...fazendas.value[idx], ...editForm.value }
-  }
-  showEditar.value = false
+function saudeColor(sensores: any[]) {
+  if (!sensores?.length) return '#6b7280'
+  const online = sensores.filter(s => s.status === 'online').length
+  const pct = (online / sensores.length) * 100
+  if (pct >= 80) return '#4ade80'
+  if (pct >= 50) return '#facc15'
+  return '#f87171'
 }
 
-function criarFazenda() {
-  fazendas.value.push({
-    id: Date.now(),
-    nome: newFazenda.value.nome,
-    localizacao: newFazenda.value.localizacao,
-    area: newFazenda.value.area + ' ha',
-    cultura: newFazenda.value.cultura,
-    saude: 100,
-    sensores: 0,
-    status: 'ativa',
-    irrigacao: 'Inativa',
-    energia: '0%',
-    agua: '0%'
-  })
-  showModal.value = false
-  newFazenda.value = { nome: '', localizacao: '', area: '', cultura: '' }
-}
+onMounted(fetchFazendas)
 </script>
 
 <template>
@@ -64,14 +87,25 @@ function criarFazenda() {
     <div class="header">
       <div>
         <h1 class="page-title">Fazendas</h1>
-        <p class="page-sub">{{ fazendas.length }} fazendas cadastradas</p>
+        <p class="page-sub">{{ fazendas.length }} cadastradas</p>
       </div>
       <button class="btn-primary" @click="showModal = true">
         <i class="ti ti-plus"></i> Nova Fazenda
       </button>
     </div>
 
-    <div class="farms-grid">
+    <div v-if="loading" class="loading-state">
+      <i class="ti ti-loader-2 spin"></i> Carregando fazendas...
+    </div>
+
+    <div v-else-if="fazendas.length === 0" class="empty-state">
+      <div class="empty-icon"><i class="ti ti-map-pin-off"></i></div>
+      <h3>Nenhuma fazenda cadastrada</h3>
+      <p>Adicione sua primeira fazenda para começar o monitoramento.</p>
+      <button class="btn-primary" @click="showModal = true"><i class="ti ti-plus"></i> Adicionar fazenda</button>
+    </div>
+
+    <div v-else class="farms-grid">
       <div v-for="f in fazendas" :key="f.id" class="farm-card">
         <div class="farm-header">
           <div class="farm-icon"><i class="ti ti-map-pin"></i></div>
@@ -79,26 +113,25 @@ function criarFazenda() {
         </div>
         <h3 class="farm-name">{{ f.nome }}</h3>
         <p class="farm-loc"><i class="ti ti-location"></i> {{ f.localizacao }}</p>
-
         <div class="farm-meta">
-          <div class="meta-item"><i class="ti ti-ruler-2"></i> {{ f.area }}</div>
+          <div class="meta-item"><i class="ti ti-ruler-2"></i> {{ f.area }} ha</div>
           <div class="meta-item"><i class="ti ti-seeding"></i> {{ f.cultura }}</div>
-          <div class="meta-item"><i class="ti ti-activity"></i> {{ f.sensores }} sensores</div>
+          <div class="meta-item"><i class="ti ti-activity"></i> {{ f._count?.sensores || f.sensores?.length || 0 }} sensores</div>
         </div>
-
         <div class="farm-health">
-          <div class="health-header">
-            <span>Saúde</span>
-            <span :style="`color:${saudeColor(f.saude)}`">{{ f.saude }}%</span>
+          <div class="health-header"><span>Sensores</span>
+            <span :style="`color:${saudeColor(f.sensores)}`">
+              {{ f.sensores?.filter((s:any)=>s.status==='online').length || 0 }}/{{ f.sensores?.length || 0 }} online
+            </span>
           </div>
           <div class="prog-track">
-            <div class="prog-fill" :style="`width:${f.saude}%;background:${saudeColor(f.saude)}`"></div>
+            <div class="prog-fill" :style="`width:${f.sensores?.length ? (f.sensores.filter((s:any)=>s.status==='online').length/f.sensores.length*100) : 0}%;background:${saudeColor(f.sensores)}`"></div>
           </div>
         </div>
-
         <div class="farm-actions">
           <button class="btn-outline" @click="abrirDetalhes(f)"><i class="ti ti-eye"></i> Ver</button>
           <button class="btn-outline" @click="abrirEditar(f)"><i class="ti ti-edit"></i> Editar</button>
+          <button class="btn-outline danger" @click="deletarFazenda(f.id)"><i class="ti ti-trash"></i></button>
         </div>
       </div>
     </div>
@@ -110,27 +143,21 @@ function criarFazenda() {
           <h3>Nova Fazenda</h3>
           <button class="modal-close" @click="showModal = false"><i class="ti ti-x"></i></button>
         </div>
+        <div class="field"><label>Nome *</label><input v-model="newFazenda.nome" type="text" placeholder="Ex: Fazenda São João" /></div>
         <div class="field">
-          <label>Nome da fazenda</label>
-          <input v-model="newFazenda.nome" type="text" placeholder="Ex: Fazenda São João" />
-        </div>
-        <div class="field">
-          <label>Localização</label>
-          <input v-model="newFazenda.localizacao" type="text" placeholder="Cidade, Estado" />
+          <label>Cidade, Estado *</label>
+          <input v-model="newFazenda.localizacao" type="text" placeholder="Ex: Sorriso, MT" />
+          <span class="field-hint"><i class="ti ti-cloud"></i> Usado para previsão do tempo</span>
         </div>
         <div class="field-row">
-          <div class="field">
-            <label>Área (ha)</label>
-            <input v-model="newFazenda.area" type="number" placeholder="0" />
-          </div>
-          <div class="field">
-            <label>Cultura principal</label>
-            <input v-model="newFazenda.cultura" type="text" placeholder="Ex: Soja" />
-          </div>
+          <div class="field"><label>Área (ha)</label><input v-model="newFazenda.area" type="number" placeholder="0" /></div>
+          <div class="field"><label>Cultura</label><input v-model="newFazenda.cultura" type="text" placeholder="Ex: Soja" /></div>
         </div>
         <div class="modal-actions">
           <button class="btn-outline-lg" @click="showModal = false">Cancelar</button>
-          <button class="btn-primary-lg" @click="criarFazenda">Criar Fazenda</button>
+          <button class="btn-primary-lg" @click="criarFazenda" :disabled="criando">
+            <i v-if="criando" class="ti ti-loader-2 spin"></i><span v-else>Criar</span>
+          </button>
         </div>
       </div>
     </div>
@@ -142,45 +169,29 @@ function criarFazenda() {
           <h3>{{ fazendaSelecionada.nome }}</h3>
           <button class="modal-close" @click="showDetalhes = false"><i class="ti ti-x"></i></button>
         </div>
-
         <div class="detalhes-grid">
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-location"></i> Localização</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.localizacao }}</span>
-          </div>
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-ruler-2"></i> Área</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.area }}</span>
-          </div>
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-seeding"></i> Cultura</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.cultura }}</span>
-          </div>
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-activity"></i> Sensores</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.sensores }}</span>
-          </div>
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-droplets"></i> Irrigação</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.irrigacao }}</span>
-          </div>
-          <div class="detalhe-item">
-            <span class="detalhe-label"><i class="ti ti-sun"></i> Energia Solar</span>
-            <span class="detalhe-val">{{ fazendaSelecionada.energia }}</span>
+          <div class="detalhe-item"><span class="detalhe-label"><i class="ti ti-location"></i> Localização</span><span>{{ fazendaSelecionada.localizacao }}</span></div>
+          <div class="detalhe-item"><span class="detalhe-label"><i class="ti ti-ruler-2"></i> Área</span><span>{{ fazendaSelecionada.area }} ha</span></div>
+          <div class="detalhe-item"><span class="detalhe-label"><i class="ti ti-seeding"></i> Cultura</span><span>{{ fazendaSelecionada.cultura }}</span></div>
+          <div class="detalhe-item"><span class="detalhe-label"><i class="ti ti-activity"></i> Sensores</span><span>{{ fazendaSelecionada.sensores?.length || 0 }}</span></div>
+        </div>
+        <div v-if="clima" class="clima-section">
+          <div class="clima-header"><i class="ti ti-cloud"></i> Clima atual</div>
+          <div class="clima-row">
+            <img :src="`https://openweathermap.org/img/wn/${clima.atual.icone}@2x.png`" width="48" />
+            <div class="clima-info">
+              <div class="clima-temp">{{ clima.atual.temp.toFixed(1) }}°C</div>
+              <div class="clima-desc">{{ clima.atual.descricao }}</div>
+            </div>
+            <div class="clima-extras">
+              <div><i class="ti ti-droplet" style="color:#22d3ee"></i> {{ clima.atual.umidade }}%</div>
+              <div><i class="ti ti-wind" style="color:#a78bfa"></i> {{ clima.atual.vento.toFixed(1) }} m/s</div>
+            </div>
           </div>
         </div>
-
-        <div style="margin-top:1.5rem">
-          <div class="detalhe-label" style="margin-bottom:8px"><i class="ti ti-heart-rate-monitor"></i> Saúde da Plantação</div>
-          <div class="prog-track-lg">
-            <div class="prog-fill-lg" :style="`width:${fazendaSelecionada.saude}%;background:${saudeColor(fazendaSelecionada.saude)}`"></div>
-          </div>
-          <span :style="`color:${saudeColor(fazendaSelecionada.saude)};font-size:0.85rem`">{{ fazendaSelecionada.saude }}%</span>
-        </div>
-
-        <div class="modal-actions" style="margin-top:1.5rem">
+        <div class="modal-actions">
           <button class="btn-outline-lg" @click="showDetalhes = false">Fechar</button>
-          <button class="btn-primary-lg" @click="showDetalhes = false; abrirEditar(fazendaSelecionada)">Editar Fazenda</button>
+          <button class="btn-primary-lg" @click="showDetalhes = false; abrirEditar(fazendaSelecionada)">Editar</button>
         </div>
       </div>
     </div>
@@ -192,27 +203,17 @@ function criarFazenda() {
           <h3>Editar Fazenda</h3>
           <button class="modal-close" @click="showEditar = false"><i class="ti ti-x"></i></button>
         </div>
-        <div class="field">
-          <label>Nome da fazenda</label>
-          <input v-model="editForm.nome" type="text" />
-        </div>
-        <div class="field">
-          <label>Localização</label>
-          <input v-model="editForm.localizacao" type="text" />
-        </div>
+        <div class="field"><label>Nome</label><input v-model="editForm.nome" type="text" /></div>
+        <div class="field"><label>Localização</label><input v-model="editForm.localizacao" type="text" /></div>
         <div class="field-row">
-          <div class="field">
-            <label>Área</label>
-            <input v-model="editForm.area" type="text" />
-          </div>
-          <div class="field">
-            <label>Cultura principal</label>
-            <input v-model="editForm.cultura" type="text" />
-          </div>
+          <div class="field"><label>Área (ha)</label><input v-model="editForm.area" type="number" /></div>
+          <div class="field"><label>Cultura</label><input v-model="editForm.cultura" type="text" /></div>
         </div>
         <div class="modal-actions">
           <button class="btn-outline-lg" @click="showEditar = false">Cancelar</button>
-          <button class="btn-primary-lg" @click="salvarEdicao">Salvar Alterações</button>
+          <button class="btn-primary-lg" @click="salvarEdicao" :disabled="salvando">
+            <i v-if="salvando" class="ti ti-loader-2 spin"></i><span v-else>Salvar</span>
+          </button>
         </div>
       </div>
     </div>
@@ -220,51 +221,62 @@ function criarFazenda() {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css');
-.page { padding: 2.5rem; background: #0a0f0d; min-height: 100vh; color: #f0fdf4; font-family: 'DM Sans', sans-serif; }
-.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-.page-title { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; }
-.page-sub { color: #6b7280; font-size: 0.9rem; margin-top: 4px; }
-.btn-primary { background: #4ade80; color: #0a0f0d; border: none; padding: 10px 20px; border-radius: 30px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
-.btn-primary:hover { background: #22c55e; }
-.farms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
-.farm-card { background: #111a14; border: 1px solid #1e3020; border-radius: 20px; padding: 1.5rem; transition: border-color 0.2s; }
-.farm-card:hover { border-color: #4ade80; }
+.page { padding: 2rem; background: var(--bg); min-height: 100vh; color: var(--text); font-family: var(--font-body); }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-title { font-family: var(--font-display); font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; }
+.page-sub { color: var(--text3); font-size: 0.9rem; margin-top: 4px; }
+.btn-primary { background: var(--green); color: #0a0f0d; border: none; padding: 10px 18px; border-radius: 30px; font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.loading-state { display: flex; align-items: center; gap: 8px; color: var(--text3); padding: 3rem; justify-content: center; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; text-align: center; background: var(--surface); border: 2px dashed var(--border); border-radius: 20px; }
+.empty-icon { width: 64px; height: 64px; background: var(--surface2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--text3); }
+.empty-state h3 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; }
+.empty-state p { color: var(--text3); font-size: 0.88rem; max-width: 320px; line-height: 1.6; }
+.farms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 1.25rem; }
+.farm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; transition: border-color 0.2s; }
+.farm-card:hover { border-color: var(--green); }
 .farm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.farm-icon { width: 42px; height: 42px; background: #172110; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 20px; }
-.farm-status { font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; font-weight: 500; text-transform: capitalize; }
-.farm-status.ativa { background: #1a2e1a; color: #4ade80; }
-.farm-status.alerta { background: #2a2200; color: #facc15; }
-.farm-name { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
-.farm-loc { font-size: 0.82rem; color: #6b7280; display: flex; align-items: center; gap: 4px; margin-bottom: 1rem; }
-.farm-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
-.meta-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: #9ca3af; background: #172110; padding: 5px 10px; border-radius: 8px; }
+.farm-icon { width: 40px; height: 40px; background: var(--surface2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--green); font-size: 18px; }
+.farm-status { font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; font-weight: 500; text-transform: capitalize; background: var(--surface2); color: var(--text3); }
+.farm-status.ativa { background: #1a2e1a; color: var(--green); }
+.farm-status.alerta { background: #2a2200; color: var(--yellow); }
+.farm-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+.farm-loc { font-size: 0.82rem; color: var(--text3); display: flex; align-items: center; gap: 4px; margin-bottom: 1rem; }
+.farm-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.meta-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text2); background: var(--surface2); padding: 4px 9px; border-radius: 8px; }
 .farm-health { margin-bottom: 1.25rem; }
-.health-header { display: flex; justify-content: space-between; font-size: 0.82rem; color: #9ca3af; margin-bottom: 6px; }
-.prog-track { background: #1a2e1a; height: 6px; border-radius: 4px; overflow: hidden; }
+.health-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text3); margin-bottom: 6px; }
+.prog-track { background: var(--surface2); height: 6px; border-radius: 4px; overflow: hidden; }
 .prog-fill { height: 100%; border-radius: 4px; transition: width 1s; }
-.prog-track-lg { background: #1a2e1a; height: 10px; border-radius: 6px; overflow: hidden; margin-bottom: 6px; }
-.prog-fill-lg { height: 100%; border-radius: 6px; transition: width 1s; }
-.farm-actions { display: flex; gap: 8px; }
-.btn-outline { flex: 1; background: transparent; border: 1px solid #1e3020; color: #9ca3af; padding: 8px; border-radius: 10px; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
-.btn-outline:hover { border-color: #4ade80; color: #4ade80; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { background: #111a14; border: 1px solid #1e3020; border-radius: 24px; padding: 2rem; width: 100%; max-width: 480px; }
+.farm-actions { display: flex; gap: 6px; }
+.btn-outline { flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 8px; border-radius: 10px; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: var(--font-body); transition: all 0.2s; }
+.btn-outline:hover { border-color: var(--green); color: var(--green); }
+.btn-outline.danger { flex: 0; padding: 8px 12px; }
+.btn-outline.danger:hover { border-color: var(--red); color: var(--red); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
 .modal-lg { max-width: 560px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.modal-header h3 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
-.modal-close { background: none; border: none; color: #6b7280; font-size: 20px; cursor: pointer; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.modal-header h3 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; }
+.modal-close { background: none; border: none; color: var(--text3); font-size: 20px; cursor: pointer; }
 .field { margin-bottom: 1rem; }
-.field label { display: block; font-size: 0.82rem; color: #9ca3af; margin-bottom: 6px; }
-.field input { width: 100%; background: #172110; border: 1px solid #1e3020; color: #f0fdf4; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif; outline: none; }
-.field input:focus { border-color: #4ade80; }
+.field label { display: block; font-size: 0.82rem; color: var(--text2); margin-bottom: 5px; }
+.field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; font-family: var(--font-body); outline: none; }
+.field input:focus { border-color: var(--green); }
+.field-hint { font-size: 0.75rem; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 3px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .modal-actions { display: flex; gap: 10px; margin-top: 1.5rem; }
-.btn-outline-lg { flex: 1; background: transparent; border: 1px solid #1e3020; color: #9ca3af; padding: 12px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-.btn-primary-lg { flex: 1; background: #4ade80; color: #0a0f0d; border: none; padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-.detalhes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.detalhe-item { background: #172110; border-radius: 12px; padding: 12px 14px; }
-.detalhe-label { font-size: 0.78rem; color: #6b7280; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
-.detalhe-val { font-size: 0.95rem; font-weight: 500; }
+.btn-outline-lg { flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 11px; border-radius: 10px; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+.btn-primary-lg { flex: 1; background: var(--green); color: #0a0f0d; border: none; padding: 11px; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.detalhes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.detalhe-item { background: var(--surface2); border-radius: 12px; padding: 12px 14px; }
+.detalhe-label { font-size: 0.75rem; color: var(--text3); display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.clima-section { background: var(--surface2); border-radius: 14px; padding: 1rem; margin-bottom: 1.25rem; }
+.clima-header { font-size: 0.82rem; color: var(--text3); display: flex; align-items: center; gap: 5px; margin-bottom: 0.75rem; }
+.clima-row { display: flex; align-items: center; gap: 1rem; }
+.clima-temp { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+.clima-desc { font-size: 0.8rem; color: var(--text3); text-transform: capitalize; }
+.clima-extras { display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; color: var(--text2); margin-left: auto; }
+.spin { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .page { padding: 1rem; } .detalhes-grid { grid-template-columns: 1fr; } }
 </style>

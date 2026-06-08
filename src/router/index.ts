@@ -22,6 +22,7 @@ const router = createRouter({
         { path: 'irrigacao', name: 'Irrigacao', component: () => import('../views/IrrigacaoView.vue') },
         { path: 'relatorios', name: 'Relatorios', component: () => import('../views/RelatoriosView.vue') },
         { path: 'alertas', name: 'Alertas', component: () => import('../views/AlertasView.vue') },
+        { path: 'assistente', name: 'Assistente', component: () => import('../views/AssistenteView.vue') },
         { path: 'planos', name: 'Planos', component: () => import('../views/PlanosView.vue') },
         { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') },
       ]
@@ -35,5 +36,3 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !auth.token) return { name: 'Login' }
   if (to.meta.public && auth.token && to.name !== 'Landing') return { path: '/app/dashboard' }
 })
-
-export default router
