@@ -36,3 +36,5 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !auth.token) return { name: 'Login' }
   if (to.meta.public && auth.token && to.name !== 'Landing') return { path: '/app/dashboard' }
 })
+
+export default router
