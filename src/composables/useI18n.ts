@@ -1,9 +1,23 @@
+// ============================================================================
+// SISTEMA DE TRADUÇÃO (i18n)
+// ============================================================================
+// Implementação simples de internacionalização sem bibliotecas externas.
+// `currentLang` é um ref REATIVO E COMPARTILHADO entre todos os componentes
+// que importam este módulo - por isso é declarado fora da função useI18n().
+//
+// Uso:
+//   const { t, currentLang, setLang } = useI18n()
+//   t('dashboard')      -> "Dashboard" / "Dashboard" / "Panel"
+//   setLang('en-US')    -> troca o idioma globalmente
+// ============================================================================
+
 import { ref } from 'vue'
 
 const translations: Record<string, Record<string, string>> = {
   'pt-BR': {
     dashboard: 'Dashboard', fazendas: 'Fazendas', sensores: 'Sensores',
     irrigacao: 'Irrigação', relatorios: 'Relatórios', alertas: 'Alertas',
+    documentos: 'Documentos', // NOVO
     assistente: 'Assistente', planos: 'Planos', perfil: 'Configurações',
     sair: 'Sair', inicio: 'Início',
     'modo-claro': 'Modo claro', 'modo-escuro': 'Modo escuro',
@@ -26,6 +40,7 @@ const translations: Record<string, Record<string, string>> = {
   'en-US': {
     dashboard: 'Dashboard', fazendas: 'Farms', sensores: 'Sensors',
     irrigacao: 'Irrigation', relatorios: 'Reports', alertas: 'Alerts',
+    documentos: 'Documents', // NEW
     assistente: 'Assistant', planos: 'Plans', perfil: 'Settings',
     sair: 'Logout', inicio: 'Home',
     'modo-claro': 'Light mode', 'modo-escuro': 'Dark mode',
@@ -48,6 +63,7 @@ const translations: Record<string, Record<string, string>> = {
   'es-ES': {
     dashboard: 'Panel', fazendas: 'Granjas', sensores: 'Sensores',
     irrigacao: 'Irrigación', relatorios: 'Informes', alertas: 'Alertas',
+    documentos: 'Documentos', // NUEVO
     assistente: 'Asistente', planos: 'Planes', perfil: 'Configuración',
     sair: 'Salir', inicio: 'Inicio',
     'modo-claro': 'Modo claro', 'modo-escuro': 'Modo oscuro',
@@ -69,6 +85,8 @@ const translations: Record<string, Record<string, string>> = {
   }
 }
 
+// Ref compartilhado globalmente - garante que ao trocar o idioma em
+// qualquer tela, TODAS as telas reajam imediatamente.
 export const currentLang = ref(localStorage.getItem('agro_language') || 'pt-BR')
 
 export function useI18n() {
