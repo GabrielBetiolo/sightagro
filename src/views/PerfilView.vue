@@ -14,6 +14,7 @@ const savingPw = ref(false)
 const savedPw = ref(false)
 const uploadingAvatar = ref(false)
 const activeTab = ref<'perfil'|'seguranca'|'notificacoes'|'aparencia'>('perfil')
+const pwError = ref('')
 
 const form = reactive({
   name: auth.user?.name || '',
@@ -24,34 +25,30 @@ const form = reactive({
 })
 
 const pwForm = reactive({ atual: '', nova: '', confirmar: '' })
-const pwError = ref('')
-
 const notifications = reactive({
-  email_alertas: true,
-  email_relatorios: true,
-  email_novidades: false,
-  push_alertas: true,
-  push_producao: false,
+  email_alertas: true, email_relatorios: true, email_novidades: false,
+  push_alertas: true, push_producao: false,
 })
 
-const timezones = ['America/Sao_Paulo','America/Manaus','America/Belem','America/Fortaleza','America/Recife','America/Noronha']
+const timezoneGroups = [
+  { label: '🌎 América do Sul', zones: ['America/Sao_Paulo','America/Manaus','America/Belem','America/Fortaleza','America/Recife','America/Noronha','America/Cuiaba','America/Porto_Velho','America/Boa_Vista','America/Argentina/Buenos_Aires','America/Santiago','America/Lima','America/Bogota','America/Caracas','America/La_Paz','America/Asuncion','America/Montevideo'] },
+  { label: '🌎 América do Norte', zones: ['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','America/Honolulu','America/Toronto','America/Vancouver','America/Mexico_City'] },
+  { label: '🌍 Europa', zones: ['Europe/London','Europe/Paris','Europe/Berlin','Europe/Madrid','Europe/Rome','Europe/Amsterdam','Europe/Lisbon','Europe/Moscow','Europe/Warsaw','Europe/Stockholm','Europe/Oslo','Europe/Helsinki','Europe/Athens','Europe/Istanbul'] },
+  { label: '🌏 Ásia', zones: ['Asia/Tokyo','Asia/Shanghai','Asia/Hong_Kong','Asia/Singapore','Asia/Seoul','Asia/Kolkata','Asia/Dubai','Asia/Bangkok','Asia/Jakarta','Asia/Manila','Asia/Karachi','Asia/Dhaka','Asia/Riyadh','Asia/Tehran'] },
+  { label: '🌍 África', zones: ['Africa/Cairo','Africa/Lagos','Africa/Nairobi','Africa/Johannesburg','Africa/Casablanca','Africa/Accra','Africa/Tunis','Africa/Addis_Ababa'] },
+  { label: '🌏 Oceania', zones: ['Australia/Sydney','Australia/Melbourne','Australia/Brisbane','Australia/Perth','Australia/Adelaide','Pacific/Auckland','Pacific/Fiji'] },
+]
+
 const languages = [
-  { value: 'pt-BR', label: 'Português (Brasil)' },
-  { value: 'en-US', label: 'English (US)' },
-  { value: 'es-ES', label: 'Español' },
+  { value: 'pt-BR', label: '🇧🇷 Português (Brasil)' },
+  { value: 'en-US', label: '🇺🇸 English (US)' },
+  { value: 'es-ES', label: '🇪🇸 Español' },
 ]
 
 async function saveProfile() {
   saving.value = true
   try {
-    await auth.updateProfile({
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      timezone: form.timezone,
-      language: form.language
-    })
-    // Aplica o idioma imediatamente
+    await auth.updateProfile({ name: form.name, email: form.email, phone: form.phone, timezone: form.timezone, language: form.language })
     setLang(form.language)
     saved.value = true
     setTimeout(() => saved.value = false, 2500)
@@ -76,13 +73,13 @@ async function handleAvatarUpload(e: Event) {
   if (!file) return
   uploadingAvatar.value = true
   try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', 'sightagro_avatars')
-    const res = await fetch(`https://api.cloudinary.com/v1_1/dkrpjfanu/image/upload`, { method: 'POST', body: formData })
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', 'sightagro_avatars')
+    const res = await fetch('https://api.cloudinary.com/v1_1/dkrpjfanu/image/upload', { method: 'POST', body: fd })
     const data = await res.json()
     if (data.secure_url) await auth.updateProfile({ avatar: data.secure_url })
-  } catch (err) { console.error('Avatar upload error:', err) }
+  } catch(err) { console.error(err) }
   finally { uploadingAvatar.value = false }
 }
 
@@ -103,23 +100,20 @@ const tabs = [
 
     <div class="settings-layout">
       <div class="tabs-sidebar">
-        <button v-for="tab in tabs" :key="tab.key"
-          class="tab-btn" :class="{ active: activeTab === tab.key }"
-          @click="activeTab = tab.key as any">
+        <button v-for="tab in tabs" :key="tab.key" class="tab-btn" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key as any">
           <i :class="['ti', tab.icon]"></i> {{ tab.label }}
         </button>
       </div>
 
       <div class="content-area">
-
         <!-- PERFIL -->
         <div v-if="activeTab === 'perfil'" class="panel">
-          <h3 class="panel-title">Informações pessoais</h3>
+          <h3 class="panel-title">{{ t('info-pessoal') }}</h3>
           <div class="avatar-section">
             <div class="avatar-wrap">
               <img v-if="auth.user?.avatar" :src="auth.user.avatar" alt="avatar" class="avatar-img" />
               <div v-else class="avatar-placeholder">{{ (auth.user?.name || 'U').charAt(0).toUpperCase() }}</div>
-              <label class="avatar-upload-btn" :class="{ loading: uploadingAvatar }">
+              <label class="avatar-upload-btn">
                 <i v-if="!uploadingAvatar" class="ti ti-camera"></i>
                 <i v-else class="ti ti-loader-2 spin"></i>
                 <input type="file" accept="image/*" @change="handleAvatarUpload" style="display:none" />
@@ -131,10 +125,9 @@ const tabs = [
               <div class="avatar-role">{{ auth.user?.role || 'Admin' }}</div>
             </div>
           </div>
-
           <div class="fields-grid">
             <div class="field">
-              <label>Nome completo</label>
+              <label>{{ t('nome-completo') }}</label>
               <div class="input-wrap"><i class="ti ti-user"></i><input v-model="form.name" type="text" /></div>
             </div>
             <div class="field">
@@ -145,12 +138,14 @@ const tabs = [
               <label>Telefone</label>
               <div class="input-wrap"><i class="ti ti-phone"></i><input v-model="form.phone" type="tel" placeholder="(00) 00000-0000" /></div>
             </div>
-            <div class="field">
+            <div class="field full-width">
               <label>Fuso horário</label>
               <div class="input-wrap">
                 <i class="ti ti-clock"></i>
                 <select v-model="form.timezone">
-                  <option v-for="tz in timezones" :key="tz" :value="tz">{{ tz }}</option>
+                  <optgroup v-for="group in timezoneGroups" :key="group.label" :label="group.label">
+                    <option v-for="tz in group.zones" :key="tz" :value="tz">{{ tz.replace(/_/g,' ') }}</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -173,12 +168,12 @@ const tabs = [
 
         <!-- SEGURANÇA -->
         <div v-if="activeTab === 'seguranca'" class="panel">
-          <h3 class="panel-title">Alterar senha</h3>
+          <h3 class="panel-title">{{ t('alterar-senha') }}</h3>
           <div v-if="pwError" class="error-box"><i class="ti ti-alert-circle"></i> {{ pwError }}</div>
-          <div v-if="savedPw" class="success-box"><i class="ti ti-check"></i> Senha alterada com sucesso!</div>
-          <div class="field"><label>Senha atual</label><div class="input-wrap"><i class="ti ti-lock"></i><input v-model="pwForm.atual" type="password" placeholder="••••••••" /></div></div>
-          <div class="field"><label>Nova senha</label><div class="input-wrap"><i class="ti ti-lock"></i><input v-model="pwForm.nova" type="password" placeholder="Mínimo 6 caracteres" /></div></div>
-          <div class="field"><label>Confirmar nova senha</label><div class="input-wrap"><i class="ti ti-lock-check"></i><input v-model="pwForm.confirmar" type="password" placeholder="Repita a senha" /></div></div>
+          <div v-if="savedPw" class="success-box"><i class="ti ti-check"></i> Senha alterada!</div>
+          <div class="field"><label>{{ t('senha-atual') }}</label><div class="input-wrap"><i class="ti ti-lock"></i><input v-model="pwForm.atual" type="password" placeholder="••••••••" /></div></div>
+          <div class="field"><label>{{ t('nova-senha') }}</label><div class="input-wrap"><i class="ti ti-lock"></i><input v-model="pwForm.nova" type="password" placeholder="Mínimo 6 caracteres" /></div></div>
+          <div class="field"><label>{{ t('confirmar-senha') }}</label><div class="input-wrap"><i class="ti ti-lock-check"></i><input v-model="pwForm.confirmar" type="password" placeholder="Repita a senha" /></div></div>
           <button class="btn-save" @click="savePassword" :disabled="savingPw">
             <span v-if="savingPw"><i class="ti ti-loader-2 spin"></i></span>
             <span v-else>Alterar senha</span>
@@ -197,27 +192,16 @@ const tabs = [
         <div v-if="activeTab === 'notificacoes'" class="panel">
           <h3 class="panel-title">Notificações por e-mail</h3>
           <div class="toggle-list">
-            <div class="toggle-item" v-for="item in [
-              {key:'email_alertas', label:'Alertas críticos', desc:'Sensor offline, umidade crítica, etc.'},
-              {key:'email_relatorios', label:'Relatórios semanais', desc:'Resumo semanal da sua fazenda'},
-              {key:'email_novidades', label:'Novidades do produto', desc:'Novas funcionalidades e melhorias'},
-            ]" :key="item.key">
+            <div class="toggle-item" v-for="item in [{key:'email_alertas',label:'Alertas críticos',desc:'Sensor offline, umidade crítica, etc.'},{key:'email_relatorios',label:'Relatórios semanais',desc:'Resumo semanal da sua fazenda'},{key:'email_novidades',label:'Novidades do produto',desc:'Novas funcionalidades'}]" :key="item.key">
               <div><div class="toggle-label">{{ item.label }}</div><div class="toggle-desc">{{ item.desc }}</div></div>
-              <button class="toggle-btn" :class="{ on: (notifications as any)[item.key] }" @click="(notifications as any)[item.key] = !(notifications as any)[item.key]">
-                <span class="toggle-knob"></span>
-              </button>
+              <button class="toggle-btn" :class="{ on: (notifications as any)[item.key] }" @click="(notifications as any)[item.key] = !(notifications as any)[item.key]"><span class="toggle-knob"></span></button>
             </div>
           </div>
           <h3 class="panel-title" style="margin-top:2rem">Notificações push</h3>
           <div class="toggle-list">
-            <div class="toggle-item" v-for="item in [
-              {key:'push_alertas', label:'Alertas em tempo real', desc:'Receba alertas instantâneos no navegador'},
-              {key:'push_producao', label:'Atualização de produção', desc:'Notificação quando a produção mudar'},
-            ]" :key="item.key">
+            <div class="toggle-item" v-for="item in [{key:'push_alertas',label:'Alertas em tempo real',desc:'Receba alertas instantâneos no navegador'},{key:'push_producao',label:'Atualização de produção',desc:'Notificação quando a produção mudar'}]" :key="item.key">
               <div><div class="toggle-label">{{ item.label }}</div><div class="toggle-desc">{{ item.desc }}</div></div>
-              <button class="toggle-btn" :class="{ on: (notifications as any)[item.key] }" @click="(notifications as any)[item.key] = !(notifications as any)[item.key]">
-                <span class="toggle-knob"></span>
-              </button>
+              <button class="toggle-btn" :class="{ on: (notifications as any)[item.key] }" @click="(notifications as any)[item.key] = !(notifications as any)[item.key]"><span class="toggle-knob"></span></button>
             </div>
           </div>
           <button class="btn-save" style="margin-top:1.5rem">Salvar preferências</button>
@@ -229,28 +213,24 @@ const tabs = [
           <div class="theme-options">
             <button class="theme-option" :class="{ active: theme.dark }" @click="!theme.dark && theme.toggle()">
               <div class="theme-preview dark-preview"><div class="tp-bar"></div><div class="tp-bar short"></div></div>
-              <div class="theme-option-label"><i class="ti ti-moon"></i> Modo escuro<span v-if="theme.dark" class="active-badge">Ativo</span></div>
+              <div class="theme-option-label"><i class="ti ti-moon"></i> {{ t('modo-escuro') }}<span v-if="theme.dark" class="active-badge">Ativo</span></div>
             </button>
             <button class="theme-option" :class="{ active: !theme.dark }" @click="theme.dark && theme.toggle()">
               <div class="theme-preview light-preview"><div class="tp-bar"></div><div class="tp-bar short"></div></div>
-              <div class="theme-option-label"><i class="ti ti-sun"></i> Modo claro<span v-if="!theme.dark" class="active-badge">Ativo</span></div>
+              <div class="theme-option-label"><i class="ti ti-sun"></i> {{ t('modo-claro') }}<span v-if="!theme.dark" class="active-badge">Ativo</span></div>
             </button>
           </div>
-
-          <h3 class="panel-title" style="margin-top:2rem">Idioma atual</h3>
+          <h3 class="panel-title" style="margin-top:2rem">Idioma</h3>
           <div class="lang-options">
-            <button v-for="l in languages" :key="l.value"
-              class="lang-option" :class="{ active: currentLang === l.value }"
-              @click="setLang(l.value); form.language = l.value">
-              {{ l.label }}
+            <button v-for="l in languages" :key="l.value" class="lang-option" :class="{ active: currentLang === l.value }" @click="setLang(l.value); form.language = l.value">
+              <span>{{ l.label }}</span>
               <span v-if="currentLang === l.value" class="active-badge">Ativo</span>
             </button>
           </div>
-          <p style="font-size:0.78rem;color:var(--text3);margin-top:0.75rem">
-            <i class="ti ti-info-circle"></i> Para salvar permanentemente, vá em Perfil e salve.
+          <p style="font-size:0.78rem;color:var(--text3);margin-top:0.75rem;display:flex;align-items:center;gap:4px">
+            <i class="ti ti-info-circle"></i> Alteração aplicada imediatamente. Salve em Perfil para persistir.
           </p>
         </div>
-
       </div>
     </div>
   </div>
@@ -278,13 +258,14 @@ const tabs = [
 .avatar-email { font-size: 0.82rem; color: var(--text3); margin-top: 2px; }
 .avatar-role { display: inline-block; background: var(--surface2); border: 1px solid var(--border); color: var(--green); font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
 .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+.full-width { grid-column: 1 / -1; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 0.82rem; color: var(--text2); }
 .input-wrap { position: relative; }
-.input-wrap .ti { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
+.input-wrap .ti { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; z-index: 1; }
 .input-wrap input, .input-wrap select { width: 100%; padding: 10px 12px 10px 38px; border-radius: 10px; font-size: 0.88rem; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body); outline: none; }
 .input-wrap input:focus, .input-wrap select:focus { border-color: var(--green); }
-.btn-save { background: var(--green); color: #0a0f0d; border: none; padding: 11px 22px; border-radius: 12px; font-family: var(--font-body); font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.btn-save { background: var(--green); color: #0a0f0d; border: none; padding: 11px 22px; border-radius: 12px; font-family: var(--font-body); font-weight: 700; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 .error-box { background: #1a0a0a; border: 1px solid #7f1d1d; color: var(--red); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
 .success-box { background: #0f2e17; border: 1px solid var(--green); color: var(--green); padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
@@ -312,17 +293,17 @@ const tabs = [
 .theme-option-label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--text); }
 .active-badge { margin-left: auto; background: var(--green); color: #0a0f0d; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .lang-options { display: flex; flex-direction: column; gap: 8px; }
-.lang-option { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 12px; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; text-align: left; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.lang-option { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 12px; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
 .lang-option.active { border-color: var(--green); color: var(--green); }
-.lang-option:hover { border-color: var(--green); }
 .spin { animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 768px) {
   .settings-layout { grid-template-columns: 1fr; }
-  .tabs-sidebar { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .tabs-sidebar { flex-direction: row; overflow-x: auto; }
   .tab-btn { white-space: nowrap; border-left: none !important; border-bottom: 2px solid transparent; }
   .tab-btn.active { border-bottom-color: var(--green); border-left: none; }
   .fields-grid { grid-template-columns: 1fr; }
   .theme-options { grid-template-columns: 1fr; }
+  .page { padding: 1rem; }
 }
 </style>

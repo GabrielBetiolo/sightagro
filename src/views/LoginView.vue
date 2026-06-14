@@ -26,11 +26,10 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="auth-page" :class="{ light: !theme.dark }">
+  <div class="auth-page">
     <button class="theme-toggle" @click="theme.toggle()">
       <i :class="['ti', theme.dark ? 'ti-sun' : 'ti-moon']"></i>
     </button>
-
     <div class="auth-left">
       <div class="brand"><i class="ti ti-leaf"></i> AgroSmart</div>
       <div class="tagline">
@@ -43,45 +42,37 @@ async function handleLogin() {
         <div class="stat"><strong>340+</strong><span>Fazendas ativas</span></div>
       </div>
     </div>
-
     <div class="auth-right">
       <div class="auth-card">
         <h2>Entrar na conta</h2>
         <p class="auth-sub">Entre com suas credenciais para continuar</p>
-
-        <div v-if="error" class="error-box">
-          <i class="ti ti-alert-circle"></i> {{ error }}
-        </div>
-
+        <div v-if="error" class="error-box"><i class="ti ti-alert-circle"></i> {{ error }}</div>
         <form @submit.prevent="handleLogin">
           <div class="field">
             <label>E-mail</label>
             <div class="input-wrap">
-              <i class="ti ti-mail"></i>
+              <i class="ti ti-mail input-icon"></i>
               <input v-model="email" type="email" placeholder="seu@email.com" required />
             </div>
           </div>
-
           <div class="field">
             <div class="field-header">
               <label>Senha</label>
               <RouterLink to="/forgot-password" class="forgot-link">Esqueceu a senha?</RouterLink>
             </div>
             <div class="input-wrap">
-              <i class="ti ti-lock"></i>
+              <i class="ti ti-lock input-icon"></i>
               <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="••••••••" required />
-              <button type="button" class="eye-btn" @click="showPassword = !showPassword">
+              <button type="button" class="eye-btn" @click="showPassword = !showPassword" tabindex="-1">
                 <i :class="['ti', showPassword ? 'ti-eye-off' : 'ti-eye']"></i>
               </button>
             </div>
           </div>
-
           <button type="submit" class="btn-submit" :disabled="loading">
             <span v-if="!loading">Entrar</span>
             <span v-else><i class="ti ti-loader-2 spin"></i> Entrando...</span>
           </button>
         </form>
-
         <p class="auth-link">Não tem conta? <RouterLink to="/register">Criar conta grátis</RouterLink></p>
       </div>
     </div>
@@ -90,8 +81,7 @@ async function handleLogin() {
 
 <style scoped>
 .auth-page { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-body); position: relative; }
-.theme-toggle { position: absolute; top: 1.25rem; right: 1.25rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s; }
-.theme-toggle:hover { border-color: var(--green); color: var(--green); }
+.theme-toggle { position: absolute; top: 1.25rem; right: 1.25rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 10; }
 .auth-left { background: linear-gradient(135deg, #14532d, #166534, #15803d); padding: 3rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
 .auth-left::before { content: ''; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; background: rgba(255,255,255,0.06); border-radius: 50%; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; color: white; position: relative; z-index: 1; }
@@ -111,11 +101,12 @@ async function handleLogin() {
 .field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .field label { font-size: 0.82rem; font-weight: 500; color: var(--text2); }
 .forgot-link { font-size: 0.8rem; color: var(--green); text-decoration: none; }
-.forgot-link:hover { text-decoration: underline; }
-.input-wrap { position: relative; }
-.input-wrap .ti { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
-.input-wrap input { width: 100%; padding: 12px 42px; border-radius: 12px; font-size: 0.9rem; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
-.eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-icon { position: absolute; left: 14px; color: var(--muted); font-size: 16px; pointer-events: none; z-index: 1; }
+.input-wrap input { width: 100%; padding: 12px 44px 12px 42px; border-radius: 12px; font-size: 0.9rem; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body); outline: none; }
+.input-wrap input:focus { border-color: var(--green); }
+.eye-btn { position: absolute; right: 12px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; display: flex; align-items: center; justify-content: center; z-index: 2; transition: color 0.2s; }
+.eye-btn:hover { color: var(--text); }
 .btn-submit { width: 100%; background: var(--green); color: #0a0f0d; border: none; padding: 13px; border-radius: 12px; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
 .btn-submit:hover:not(:disabled) { background: var(--green2); transform: translateY(-1px); }
 .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
