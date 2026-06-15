@@ -23,7 +23,7 @@ const sidebarOpen = ref(true)
 const mobileOpen = ref(false)
 
 // Itens do menu principal (sidebar desktop)
-// NOVO: item "documentos" adicionado entre Alertas e Assistente
+// NOVO: item "financeiro" adicionado entre Documentos e Assistente
 const navItems = [
   { path: '/app/dashboard', icon: 'ti-layout-dashboard', key: 'dashboard' },
   { path: '/app/fazendas', icon: 'ti-map', key: 'fazendas' },
@@ -31,14 +31,13 @@ const navItems = [
   { path: '/app/irrigacao', icon: 'ti-droplet', key: 'irrigacao' },
   { path: '/app/relatorios', icon: 'ti-chart-bar', key: 'relatorios' },
   { path: '/app/alertas', icon: 'ti-bell', key: 'alertas' },
-  { path: '/app/documentos', icon: 'ti-file-certificate', key: 'documentos' }, // NOVO
+  { path: '/app/documentos', icon: 'ti-file-certificate', key: 'documentos' },
+  { path: '/app/financeiro', icon: 'ti-cash', key: 'financeiro' }, // NOVO
   { path: '/app/assistente', icon: 'ti-robot', key: 'assistente' },
   { path: '/app/planos', icon: 'ti-crown', key: 'planos' },
 ]
 
 // Itens da barra inferior (mobile) - mantém apenas os mais usados
-// Documentos fica acessível via sidebar/menu completo no mobile, não na
-// bottom nav, para não sobrecarregar o espaço.
 const bottomNavItems = [
   { path: '/app/dashboard', icon: 'ti-layout-dashboard', key: 'dashboard' },
   { path: '/app/fazendas', icon: 'ti-map', key: 'fazendas' },
