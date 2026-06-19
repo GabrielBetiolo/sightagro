@@ -1,9 +1,6 @@
 // ============================================================================
 // ROTAS DA APLICAÇÃO (Vue Router)
 // ============================================================================
-// - Rotas públicas (acessíveis sem login): landing, login, registro, etc.
-// - Rotas privadas (sob /app/*): exigem token de autenticação válido.
-// ============================================================================
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -33,20 +30,20 @@ const router = createRouter({
         { path: 'relatorios', name: 'Relatorios', component: () => import('../views/RelatoriosView.vue') },
         { path: 'alertas', name: 'Alertas', component: () => import('../views/AlertasView.vue') },
         { path: 'documentos', name: 'Documentos', component: () => import('../views/DocumentosView.vue') },
-        { path: 'financeiro', name: 'Financeiro', component: () => import('../views/FinanceiroView.vue') }, // NOVO
+        { path: 'financeiro', name: 'Financeiro', component: () => import('../views/FinanceiroView.vue') },
+        { path: 'colaboradores', name: 'Colaboradores', component: () => import('../views/ColaboradoresView.vue') },
+        { path: 'estoque', name: 'Estoque', component: () => import('../views/EstoqueView.vue') },
+        { path: 'pecuaria', name: 'Pecuaria', component: () => import('../views/PecuariaView.vue') }, // NOVO
         { path: 'assistente', name: 'Assistente', component: () => import('../views/AssistenteView.vue') },
         { path: 'planos', name: 'Planos', component: () => import('../views/PlanosView.vue') },
         { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') },
       ]
     },
 
-    // Qualquer rota desconhecida volta para a landing page
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
 
-// Guard global: protege rotas privadas e redireciona usuários já logados
-// que tentam acessar páginas públicas (exceto a landing)
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.token) return { name: 'Login' }

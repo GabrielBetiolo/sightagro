@@ -3,9 +3,6 @@
   APP LAYOUT
 ============================================================================
   Layout principal do painel autenticado (/app/*).
-  - Sidebar com navegação (desktop)
-  - Bottom nav (mobile)
-  - Toggle de tema claro/escuro
 ============================================================================
 -->
 <script setup lang="ts">
@@ -23,7 +20,7 @@ const sidebarOpen = ref(true)
 const mobileOpen = ref(false)
 
 // Itens do menu principal (sidebar desktop)
-// NOVO: item "financeiro" adicionado entre Documentos e Assistente
+// NOVO: item "colaboradores" adicionado entre Financeiro e Assistente
 const navItems = [
   { path: '/app/dashboard', icon: 'ti-layout-dashboard', key: 'dashboard' },
   { path: '/app/fazendas', icon: 'ti-map', key: 'fazendas' },
@@ -32,12 +29,14 @@ const navItems = [
   { path: '/app/relatorios', icon: 'ti-chart-bar', key: 'relatorios' },
   { path: '/app/alertas', icon: 'ti-bell', key: 'alertas' },
   { path: '/app/documentos', icon: 'ti-file-certificate', key: 'documentos' },
-  { path: '/app/financeiro', icon: 'ti-cash', key: 'financeiro' }, // NOVO
+  { path: '/app/financeiro', icon: 'ti-cash', key: 'financeiro' },
+  { path: '/app/colaboradores', icon: 'ti-users', key: 'colaboradores' },
+  { path: '/app/estoque', icon: 'ti-package', key: 'estoque' },
+  { path: '/app/pecuaria', icon: 'ti-paw', key: 'pecuaria' }, // NOVO
   { path: '/app/assistente', icon: 'ti-robot', key: 'assistente' },
   { path: '/app/planos', icon: 'ti-crown', key: 'planos' },
 ]
 
-// Itens da barra inferior (mobile) - mantém apenas os mais usados
 const bottomNavItems = [
   { path: '/app/dashboard', icon: 'ti-layout-dashboard', key: 'dashboard' },
   { path: '/app/fazendas', icon: 'ti-map', key: 'fazendas' },
@@ -53,7 +52,6 @@ const isActive = (path: string) => route.path === path
   <div class="layout">
     <div v-if="mobileOpen" class="mobile-overlay" @click="mobileOpen = false"></div>
 
-    <!-- SIDEBAR DESKTOP -->
     <aside class="sidebar" :class="{ collapsed: !sidebarOpen, 'mobile-open': mobileOpen }">
       <div class="sidebar-top">
         <div class="logo">
@@ -96,7 +94,6 @@ const isActive = (path: string) => route.path === path
       </div>
     </aside>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div class="main-wrap">
       <header class="mobile-header">
         <button class="hamburger" @click="mobileOpen = !mobileOpen">
@@ -118,7 +115,6 @@ const isActive = (path: string) => route.path === path
         <RouterView />
       </main>
 
-      <!-- BOTTOM NAV (MOBILE) -->
       <nav class="bottom-nav">
         <RouterLink
           v-for="item in bottomNavItems" :key="item.path"
