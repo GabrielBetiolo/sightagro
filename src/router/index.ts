@@ -1,52 +1,79 @@
-// ============================================================================
-// ROTAS DA APLICAÇÃO (Vue Router)
-// ============================================================================
+/**
+ * router/index.ts — SightAgro (versão completa com Mapa)
+ */
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const LandingView        = () => import('../views/LandingView.vue')
+const LoginView          = () => import('../views/LoginView.vue')
+const RegisterView       = () => import('../views/RegisterView.vue')
+const ForgotPasswordView = () => import('../views/ForgotPasswordView.vue')
+const ResetPasswordView  = () => import('../views/ResetPasswordView.vue')
+
+const AppLayout          = () => import('../components/AppLayout.vue')
+const DashboardView      = () => import('../views/DashboardView.vue')
+const FazendasView       = () => import('../views/FazendasView.vue')
+const SensoresView       = () => import('../views/SensoresView.vue')
+const IrrigacaoView      = () => import('../views/IrrigacaoView.vue')
+const AlertasView        = () => import('../views/AlertasView.vue')
+const RelatoriosView     = () => import('../views/RelatoriosView.vue')
+const PerfilView         = () => import('../views/PerfilView.vue')
+const PlanosView         = () => import('../views/PlanosView.vue')
+const AssistenteView     = () => import('../views/AssistenteView.vue')
+const DocumentosView     = () => import('../views/DocumentosView.vue')
+const FinanceiroView     = () => import('../views/FinanceiroView.vue')
+const ColaboradoresView  = () => import('../views/ColaboradoresView.vue')
+const EstoqueView        = () => import('../views/EstoqueView.vue')
+const PecuariaView       = () => import('../views/PecuariaView.vue')
+const AquiculturaView    = () => import('../views/AquiculturaView.vue')
+const PragasView         = () => import('../views/PragasView.vue')
+const MapaView           = () => import('../views/MapaView.vue')   // ← NOVO
+
 const router = createRouter({
   history: createWebHistory(),
-  scrollBehavior: () => ({ top: 0 }),
   routes: [
-    { path: '/', name: 'Landing', component: () => import('../views/LandingView.vue'), meta: { public: true } },
-    { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
-    { path: '/register', name: 'Register', component: () => import('../views/RegisterView.vue'), meta: { public: true } },
-    { path: '/forgot-password', name: 'ForgotPassword', component: () => import('../views/ForgotPasswordView.vue'), meta: { public: true } },
-    { path: '/reset-password', name: 'ResetPassword', component: () => import('../views/ResetPasswordView.vue'), meta: { public: true } },
+    { path: '/',               component: LandingView },
+    { path: '/login',          component: LoginView },
+    { path: '/register',       component: RegisterView },
+    { path: '/forgot-password',component: ForgotPasswordView },
+    { path: '/reset-password', component: ResetPasswordView },
 
     {
       path: '/app',
-      component: () => import('../components/AppLayout.vue'),
+      component: AppLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/app/dashboard' },
-        { path: 'dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
-        { path: 'fazendas', name: 'Fazendas', component: () => import('../views/FazendasView.vue') },
-        { path: 'sensores', name: 'Sensores', component: () => import('../views/SensoresView.vue') },
-        { path: 'irrigacao', name: 'Irrigacao', component: () => import('../views/IrrigacaoView.vue') },
-        { path: 'relatorios', name: 'Relatorios', component: () => import('../views/RelatoriosView.vue') },
-        { path: 'alertas', name: 'Alertas', component: () => import('../views/AlertasView.vue') },
-        { path: 'documentos', name: 'Documentos', component: () => import('../views/DocumentosView.vue') },
-        { path: 'financeiro', name: 'Financeiro', component: () => import('../views/FinanceiroView.vue') },
-        { path: 'colaboradores', name: 'Colaboradores', component: () => import('../views/ColaboradoresView.vue') },
-        { path: 'estoque', name: 'Estoque', component: () => import('../views/EstoqueView.vue') },
-        { path: 'pecuaria', name: 'Pecuaria', component: () => import('../views/PecuariaView.vue') },
-        { path: 'aquicultura', name: 'Aquicultura', component: () => import('../views/AquiculturaView.vue') }, // NOVO
-        { path: 'assistente', name: 'Assistente', component: () => import('../views/AssistenteView.vue') },
-        { path: 'planos', name: 'Planos', component: () => import('../views/PlanosView.vue') },
-        { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') },
-      ]
+        { path: 'dashboard',     component: DashboardView },
+        { path: 'fazendas',      component: FazendasView },
+        { path: 'sensores',      component: SensoresView },
+        { path: 'irrigacao',     component: IrrigacaoView },
+        { path: 'alertas',       component: AlertasView },
+        { path: 'relatorios',    component: RelatoriosView },
+        { path: 'pragas',        component: PragasView },
+        { path: 'mapa',          component: MapaView },        // ← NOVO
+        { path: 'documentos',    component: DocumentosView },
+        { path: 'financeiro',    component: FinanceiroView },
+        { path: 'colaboradores', component: ColaboradoresView },
+        { path: 'estoque',       component: EstoqueView },
+        { path: 'pecuaria',      component: PecuariaView },
+        { path: 'aquicultura',   component: AquiculturaView },
+        { path: 'assistente',    component: AssistenteView },
+        { path: 'planos',        component: PlanosView },
+        { path: 'perfil',        component: PerfilView },
+        { path: '', redirect: 'dashboard' },
+      ],
     },
 
-    { path: '/:pathMatch(.*)*', redirect: '/' }
-  ]
+    { path: '/:pathMatch(.*)*', redirect: '/' },
+  ],
 })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (to.meta.requiresAuth && !auth.token) return { name: 'Login' }
-  if (to.meta.public && auth.token && to.name !== 'Landing') return { path: '/app/dashboard' }
+  if (to.meta.requiresAuth && !auth.token) {
+    return { path: '/login' }
+  }
 })
 
 export default router
