@@ -32,7 +32,8 @@ const navItems = [
   { path: '/app/financeiro', icon: 'ti-cash', key: 'financeiro' },
   { path: '/app/colaboradores', icon: 'ti-users', key: 'colaboradores' },
   { path: '/app/estoque', icon: 'ti-package', key: 'estoque' },
-  { path: '/app/pecuaria', icon: 'ti-paw', key: 'pecuaria' }, // NOVO
+  { path: '/app/pecuaria', icon: 'ti-paw', key: 'pecuaria' },
+  { path: '/app/aquicultura', icon: 'ti-fish', key: 'aquicultura' }, // NOVO
   { path: '/app/assistente', icon: 'ti-robot', key: 'assistente' },
   { path: '/app/planos', icon: 'ti-crown', key: 'planos' },
 ]

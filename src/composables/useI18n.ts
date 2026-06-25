@@ -21,7 +21,8 @@ const translations: Record<string, Record<string, string>> = {
     financeiro: 'Financeiro',
     colaboradores: 'Colaboradores',
     estoque: 'Estoque',
-    pecuaria: 'Pecuária', // NOVO
+    pecuaria: 'Pecuária',
+    aquicultura: 'Aquicultura', // NOVO
     assistente: 'Assistente', planos: 'Planos', perfil: 'Configurações',
     sair: 'Sair', inicio: 'Início',
     'modo-claro': 'Modo claro', 'modo-escuro': 'Modo escuro',
@@ -48,7 +49,8 @@ const translations: Record<string, Record<string, string>> = {
     financeiro: 'Finance',
     colaboradores: 'Team',
     estoque: 'Inventory',
-    pecuaria: 'Livestock', // NEW
+    pecuaria: 'Livestock',
+    aquicultura: 'Aquaculture', // NEW
     assistente: 'Assistant', planos: 'Plans', perfil: 'Settings',
     sair: 'Logout', inicio: 'Home',
     'modo-claro': 'Light mode', 'modo-escuro': 'Dark mode',
@@ -75,7 +77,8 @@ const translations: Record<string, Record<string, string>> = {
     financeiro: 'Finanzas',
     colaboradores: 'Colaboradores',
     estoque: 'Inventario',
-    pecuaria: 'Ganadería', // NUEVO
+    pecuaria: 'Ganadería',
+    aquicultura: 'Acuicultura', // NUEVO
     assistente: 'Asistente', planos: 'Planes', perfil: 'Configuración',
     sair: 'Salir', inicio: 'Inicio',
     'modo-claro': 'Modo claro', 'modo-escuro': 'Modo oscuro',

@@ -9,14 +9,12 @@ const router = createRouter({
   history: createWebHistory(),
   scrollBehavior: () => ({ top: 0 }),
   routes: [
-    // ---------------- ROTAS PÚBLICAS ----------------
     { path: '/', name: 'Landing', component: () => import('../views/LandingView.vue'), meta: { public: true } },
     { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
     { path: '/register', name: 'Register', component: () => import('../views/RegisterView.vue'), meta: { public: true } },
     { path: '/forgot-password', name: 'ForgotPassword', component: () => import('../views/ForgotPasswordView.vue'), meta: { public: true } },
     { path: '/reset-password', name: 'ResetPassword', component: () => import('../views/ResetPasswordView.vue'), meta: { public: true } },
 
-    // ---------------- ROTAS PRIVADAS (painel) ----------------
     {
       path: '/app',
       component: () => import('../components/AppLayout.vue'),
@@ -33,7 +31,8 @@ const router = createRouter({
         { path: 'financeiro', name: 'Financeiro', component: () => import('../views/FinanceiroView.vue') },
         { path: 'colaboradores', name: 'Colaboradores', component: () => import('../views/ColaboradoresView.vue') },
         { path: 'estoque', name: 'Estoque', component: () => import('../views/EstoqueView.vue') },
-        { path: 'pecuaria', name: 'Pecuaria', component: () => import('../views/PecuariaView.vue') }, // NOVO
+        { path: 'pecuaria', name: 'Pecuaria', component: () => import('../views/PecuariaView.vue') },
+        { path: 'aquicultura', name: 'Aquicultura', component: () => import('../views/AquiculturaView.vue') }, // NOVO
         { path: 'assistente', name: 'Assistente', component: () => import('../views/AssistenteView.vue') },
         { path: 'planos', name: 'Planos', component: () => import('../views/PlanosView.vue') },
         { path: 'perfil', name: 'Perfil', component: () => import('../views/PerfilView.vue') },
